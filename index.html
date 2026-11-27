@@ -92,8 +92,8 @@ main{min-width:0}.card{min-width:0}.menuToggle{display:none}@media (max-width:82
 /* ================= Sambungan database =================
    Isi dua baris di bawah setelah server Apps Script dipasang (lihat PANDUAN-PASANG).
    Bila kosong, LAPORIN berjalan tanpa database: semua data hanya tersimpan di browser ini. */
-const LAPORIN_API = '';        // URL aplikasi web Apps Script, berakhiran /exec
-const LAPORIN_CLIENT_ID = '';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
+const LAPORIN_API = 'https://script.google.com/macros/s/AKfycbyg3WtQKhmbtnKjSn_uWkXqAHYOEyYoUiX2mRW0XG3wWgql3F0rtBeZOvLDSojxEFu60A/exec';        // URL aplikasi web Apps Script, berakhiran /exec
+const LAPORIN_CLIENT_ID = '719371143423-v2bvbg62r4q6qsn9rtgmm4dhdheasb9t.apps.googleusercontent.com';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
 const CFG = Object.assign({ api: LAPORIN_API, clientId: LAPORIN_CLIENT_ID }, window.LAPORIN_CONFIG || {});
 const CLOUD = !!(CFG.api && CFG.clientId);
 /* ================= Penyimpanan ================= */
