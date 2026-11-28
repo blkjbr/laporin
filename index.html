@@ -87,6 +87,7 @@ main{min-width:0}.card{min-width:0}.menuToggle{display:none}@media (max-width:82
 @media (max-width:820px){.psnTata{grid-template-columns:1fr}.psnB{max-width:92%}}
 .warnaPilih{display:flex;flex-wrap:wrap;gap:6px}.warnaPilih button{width:38px;height:30px;border:1px solid #9aa3b5;border-radius:7px;color:#000;font-weight:700;font-size:12px;cursor:pointer}.warnaPilih button.on{outline:3px solid var(--pr);outline-offset:1px}
 #ukurPg{position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none}#ukurPg .pg{min-height:0!important;padding:0!important;box-shadow:none}#ukurPg .pg.ls{width:285mm}#ukurPg .pg.pt{width:194mm}
+.judulUnit{resize:vertical;max-height:180px;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -105,9 +106,9 @@ main{min-width:0}.card{min-width:0}.menuToggle{display:none}@media (max-width:82
 /* ================= Sambungan database =================
    Isi dua baris di bawah setelah server Apps Script dipasang (lihat PANDUAN-PASANG).
    Bila kosong, LAPORIN berjalan tanpa database: semua data hanya tersimpan di browser ini. */
-const LAPORIN_API = 'https://script.google.com/macros/s/AKfycbyg3WtQKhmbtnKjSn_uWkXqAHYOEyYoUiX2mRW0XG3wWgql3F0rtBeZOvLDSojxEFu60A/exec';        // URL aplikasi web Apps Script, berakhiran /exec
-const LAPORIN_CLIENT_ID = '719371143423-v2bvbg62r4q6qsn9rtgmm4dhdheasb9t.apps.googleusercontent.com';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
-const LAPORIN_ADMIN_EMAIL = 'instruktur.blkjember@gmail.com'; // email administrator untuk tombol Hubungi admin (boleh lebih dari satu, pisahkan dengan koma)
+const LAPORIN_API = '';        // URL aplikasi web Apps Script, berakhiran /exec
+const LAPORIN_CLIENT_ID = '';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
+const LAPORIN_ADMIN_EMAIL = ''; // email administrator untuk tombol Hubungi admin (boleh lebih dari satu, pisahkan dengan koma)
 const CFG = Object.assign({ api: LAPORIN_API, clientId: LAPORIN_CLIENT_ID, adminEmail: LAPORIN_ADMIN_EMAIL }, window.LAPORIN_CONFIG || {});
 const CLOUD = !!(CFG.api && CFG.clientId);
 /* ================= Penyimpanan ================= */
@@ -124,7 +125,7 @@ const KEY_MT = 'silapela_metode', MT_DASAR = ['Luring', 'Daring', 'Blended']; le
 try { if (lsOK) mtTambahan = JSON.parse(localStorage.getItem(KEY_MT) || '[]'); } catch (e) { }
 function daftarMT(nilai) { const a = [...MT_DASAR, ...mtTambahan]; if (nilai && !a.includes(nilai)) a.push(nilai); return a; }
 function simpanMT() { if (lsOK) localStorage.setItem(KEY_MT, JSON.stringify(mtTambahan)); }
-const VERSI = '1.5', VERSI_TGL = '27 November 2026';
+const VERSI = '1.6', VERSI_TGL = '27 November 2026';
 const Store = {
   async list() { return lsOK ? JSON.parse(localStorage.getItem(KEY) || '[]') : memori; },
   async save(p) { if (CLOUD) Awan.tandai('kelas', p.id); const a = await this.list(); const i = a.findIndex(x => x.id === p.id); i < 0 ? a.push(p) : a[i] = p; this._w(a); },
@@ -342,6 +343,12 @@ const Awan = {
     this.sesi = ''; lsSet(AW.sesi, ''); if (j === 'hapus') this.bersihkan();
     try { google.accounts.id.disableAutoSelect(); } catch (e) { }
     S.cur = null; S.view = 'masuk'; S.adm = null; render();
+  },
+  async keluarSemua() {
+    if (!(await tanya('Keluar dari semua perangkat? Sesi LAPORIN di semua komputer dan HP yang pernah Anda pakai, termasuk perangkat ini, langsung diputus. Data kelas tetap aman di server. Setelah ini Anda perlu login lagi.', 'Keluar dari semua perangkat'))) return;
+    if (this.jumlahAntre()) await this.dorong();
+    try { const r = await this.api('keluarSemua'); this.sesi = ''; lsSet(AW.sesi, ''); try { google.accounts.id.disableAutoSelect(); } catch (e) { }
+      S.cur = null; S.view = 'masuk'; S.adm = null; toast(`Berhasil keluar dari ${r.n} sesi di semua perangkat.`); render(); } catch (e) { toast(e.message); }
   },
   muatGIS() { return this._gis || (this._gis = new Promise((ok, ng) => { if (window.google && google.accounts && google.accounts.id) return ok(); const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = ok; s.onerror = () => { this._gis = null; ng(new Error('Layanan login Google tidak bisa dimuat. Periksa internet.')); }; document.head.appendChild(s); })); },
   async pasangTombol() {
@@ -659,7 +666,8 @@ function vAkun() {
     <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px"><h2>Profil instruktur</h2>${formAkun(S.awEdit, 'Simpan perubahan')}</section>
     <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:10px"><h2>Sinkronisasi</h2><div>${esc(st)}${A.pesan ? `<div class="mut" style="font-size:12px">${esc(A.pesan)}</div>` : ''}</div>
       <div class="mut" style="font-size:13px">Setiap isian tersimpan dulu di browser ini, lalu dikirim ke database dalam beberapa detik. Perubahan dari rekan diambil setiap menit. Bila internet terputus, isian tetap tersimpan dan dikirim begitu tersambung lagi.</div>
-      <div class="row"><button class="btn" data-act="awSinkron">Sinkronkan sekarang</button>${A.dataLama() ? '<button class="btn" data-act="awPindah">Unggah data lama dari browser ini</button>' : ''}<button class="btn d" data-act="awKeluar">Keluar</button></div></section></div>`;
+      <div class="row"><button class="btn" data-act="awSinkron">Sinkronkan sekarang</button>${A.dataLama() ? '<button class="btn" data-act="awPindah">Unggah data lama dari browser ini</button>' : ''}<button class="btn d" data-act="awKeluar">Keluar</button></div></section>
+    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:10px"><h2>Keamanan</h2><div class="mut" style="font-size:13px">Lupa keluar di komputer lain atau komputer bersama? Putus semua sesi LAPORIN Anda sekaligus. Akun Google di perangkat itu tidak ikut keluar; keluarkan lewat myaccount.google.com &gt; Keamanan &gt; Perangkat Anda.</div><div><button class="btn d" data-act="awKeluarSemua">Keluar dari semua perangkat</button></div></section></div>`;
 }
 function vPindah() {
   const L = Awan.dataLama(); if (!L) { S.view = 'daftar'; return vDaftar(); }
@@ -820,7 +828,7 @@ const inp = (pth, v, a = '') => `<input data-pth="${pth}" value="${esc(v)}" ${a}
 const sel = (pth, v, opsi) => `<select data-pth="${pth}">${opsi.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
 const geserBtn = (l, i, n) => `<div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn s" data-act="geser" data-l="${l}" data-i="${i}" data-d="-1" ${i ? '' : 'disabled'} aria-label="Naikkan urutan ${i + 1}" title="Naikkan">&#9650;</button><button class="btn s" data-act="geser" data-l="${l}" data-i="${i}" data-d="1" ${i < n - 1 ? '' : 'disabled'} aria-label="Turunkan urutan ${i + 1}" title="Turunkan">&#9660;</button></div>`;
 const hapusBtn = (l, i) => `<button class="btn s d" data-act="hapusBaris" data-l="${l}" data-i="${i}" aria-label="Hapus baris ${i + 1}">Hapus</button>`;
-const tbl = (head, rows, kosong) => `<div class="card" style="overflow-x:auto"><table class="tb"><thead><tr>${head.map(h => `<th${h[1] ? ` style="width:${h[1]}"` : ''}>${h[0]}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="mut" style="text-align:center;padding:20px">${kosong}</td></tr>`}</tbody></table></div>`;
+const tbl = (head, rows, kosong, lebarMin) => `<div class="card" style="overflow-x:auto"><table class="tb"${lebarMin ? ` style="min-width:${lebarMin}"` : ''}><thead><tr>${head.map(h => `<th${h[1] ? ` style="width:${h[1]}"` : ''}>${h[0]}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="mut" style="text-align:center;padding:20px">${kosong}</td></tr>`}</tbody></table></div>`;
 const kepala = (j, ket, tombol = '') => `<div class="row between"><div><h1>${j}</h1><div class="mut" id="ringkas">${esc(ket)}</div></div><div class="row">${tombol}</div></div>`;
 const tambah = (l, t) => `<button class="btn p" data-act="tambahBaris" data-l="${l}">${t}</button>`;
 const URUT = ['libur', 'program', 'personil', 'peserta', 'kurikulum', 'jurnal', 'bahan', 'penilaian', 'status', 'hasil'];
@@ -870,7 +878,8 @@ const HAL = {
     + tbl([['No', '60px'], ['Nama peserta'], ['Jenis kelamin', '150px'], ['Ketua kelas', '110px'], ['', '90px']], p.peserta.map((r, i) => { const b = `peserta.${i}.`; return `<tr><td>${i + 1}</td><td>${inp(b + 'nama', r.nama, `aria-label="Nama peserta ${i + 1}"`)}</td><td>${sel(b + 'jk', r.jk, ['L', 'P'])}</td><td><input type="radio" name="ketua" ${r.ketua ? 'checked' : ''} data-act="ketua" data-i="${i}" aria-label="Jadikan ketua kelas" style="width:auto"></td><td>${hapusBtn('peserta', i)}</td></tr>`; }), 'Belum ada peserta.') + kaki('peserta'),
   kurikulum: p => kepala('Kurikulum dan Materi', RINGKAS.kurikulum(p), (p.kurikulum.inti.length || p.kurikulum.penunjang.length) && !S.baca ? '<button class="btn d" data-act="kurKosong">Kosongkan kurikulum</button>' : '')
     + `<div class="row between"><h2>Unit kompetensi inti</h2><div class="row"><button class="btn" data-act="pilihBank">Pilih dari bank SKKNI</button><button class="btn" data-act="unggahSk">Unggah SKKNI (PDF)</button><button class="btn" data-act="unggahKur">Unggah kurikulum (Excel/CSV)</button><button class="btn" data-act="jpOtomatis">Hitung JP otomatis</button>${tambah('kurikulum.inti', '+ Tambah unit')}</div></div>`
-    + tbl([['No', '50px'], ['Kode unit', '180px'], ['Judul unit'], ['Elemen kompetensi, satu per baris', '30%'], ['Beban materi', '110px'], ['Teori', '90px'], ['Praktik', '90px'], ['JP', '90px'], ['Kunci', '60px'], ['Urutan', '96px'], ['', '90px']], p.kurikulum.inti.map((u, i) => { const b = `kurikulum.inti.${i}.`; return `<tr><td>${i + 1}</td><td>${inp(b + 'kode', u.kode, 'aria-label="Kode unit"')}</td><td>${inp(b + 'judul', u.judul, 'aria-label="Judul unit"')}</td><td><textarea data-pth="${b}elemen" data-arr rows="${Math.max(2, (u.elemen || []).length)}" aria-label="Elemen kompetensi">${esc((u.elemen || []).join('\n'))}</textarea></td><td class="mut" style="font-size:12px">${bebanTeks(u)}</td>${sel_tp(p, 'inti', i)}<td>${inp(b + 'jp', u.jp, 'type="number" min="0" data-n aria-label="JP unit"')}</td><td><input type="checkbox" data-pth="${b}tetap" ${u.tetap ? 'checked' : ''} aria-label="Kunci JP unit ini" style="width:auto"></td><td>${geserBtn('kurikulum.inti', i, p.kurikulum.inti.length)}</td><td>${hapusBtn('kurikulum.inti', i)}</td></tr>`; }), 'Belum ada unit. Unggah SKKNI, unggah berkas kurikulum, atau tambahkan manual.')
+    + tbl([['No', '44px'], ['Kode unit', '176px'], ['Judul unit', '300px'], ['Elemen kompetensi, satu per baris', '340px'], ['Beban materi', '96px'], ['Teori', '84px'], ['Praktik', '84px'], ['JP', '84px'], ['Kunci', '56px'], ['Urutan', '104px'], ['', '92px']], p.kurikulum.inti.map((u, i) => { const b = `kurikulum.inti.${i}.`; return `<tr><td>${i + 1}</td><td>${inp(b + 'kode', u.kode, 'aria-label="Kode unit"')}</td><td><textarea data-pth="${b}judul" rows="${Math.max(2, Math.ceil(String(u.judul || '').length / 34))}" aria-label="Judul unit" class="judulUnit">${esc(u.judul || '')}</textarea></td><td><textarea data-pth="${b}elemen" data-arr rows="${Math.max(2, (u.elemen || []).length)}" aria-label="Elemen kompetensi">${esc((u.elemen || []).join('\n'))}</textarea></td><td class="mut" style="font-size:12px">${bebanTeks(u)}</td>${sel_tp(p, 'inti', i)}<td>${inp(b + 'jp', u.jp, 'type="number" min="0" data-n aria-label="JP unit"')}</td><td><input type="checkbox" data-pth="${b}tetap" ${u.tetap ? 'checked' : ''} aria-label="Kunci JP unit ini" style="width:auto"></td><td>${geserBtn('kurikulum.inti', i, p.kurikulum.inti.length)}</td><td>${hapusBtn('kurikulum.inti', i)}</td></tr>`; }), 'Belum ada unit. Unggah SKKNI, unggah berkas kurikulum, atau tambahkan manual.', '1460px;table-layout:fixed')
+    + (() => { const n = kodeDariBank(p, true); return n && !S.baca ? `<div class="card wa" style="padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:220px">${n} unit belum punya kode unit, padahal judulnya cocok dengan SKKNI di bank.</span><button class="btn s p" data-act="kodeBank">Isi kode unit dari bank SKKNI</button></div>` : ''; })()
     + `<p class="mut" style="margin:0">Hitung JP otomatis membagi kuota JP unit inti (${+p.program.jpInti} JP) dalam kelipatan ${kelipatanJP(p)} JP menurut beban materi tiap unit (sisa yang tidak habis dibagi masuk ke unit terberat), yaitu jumlah elemen kompetensi ditambah setengah jumlah kriteria unjuk kerja. Centang Kunci pada unit yang JP-nya sudah Anda tetapkan, maka unit itu tidak diubah dan sisanya dibagi ke unit lain. Atur urutan unit dengan tombol &#9650; &#9660;; urutan ini dipakai saat menyusun jurnal otomatis dan di laporan.</p>`
     + `<div class="card" style="padding:12px 16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap"><label class="f" style="width:170px">Kelipatan JP otomatis<select data-pth="kurikulum.kelipatan">${[[4, '4 JP (bawaan)'], [8, '8 JP'], [2, '2 JP'], [1, 'Bebas (1 JP)']].map(([v, l]) => `<option value="${v}" ${kelipatanJP(p) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label class="f" style="width:170px">Porsi teori (%)<input type="number" min="0" max="100" data-porsi value="${porsiTeori(p)}"></label><div style="flex:1;min-width:240px"><div><b>JP teori dan praktik</b> untuk lembar Kurikulum. Porsi ini hanya patokan umum (biasanya 30% teori, 70% praktik). Setiap unit bebas diubah: isi Teori atau Praktik, dan kolom pasangannya menyesuaikan agar jumlahnya tetap sama dengan JP unit. Unit yang hanya teori cukup diisi Praktik 0, unit yang hanya praktik diisi Teori 0. Angka samar berarti masih otomatis; angka tebal berarti sudah diatur sendiri.</div><div class="mut" id="tpRingkas" style="margin-top:4px">${ringkasTP(p)}</div></div><button class="btn" data-act="tpReset">Kembalikan semua ke porsi otomatis</button></div>`
     + `<div class="row between"><div><h2>Materi penunjang</h2><div class="mut">Diisi manual. Kosongkan bila tidak ada, dan isi JP penunjang 0 di Program Pelatihan.</div></div>${tambah('kurikulum.penunjang', '+ Tambah materi')}</div>`
@@ -1614,12 +1623,16 @@ function pecahHtml(html) {
   sec.querySelectorAll('.kop.gb img').forEach(img => { const d = dimGambar(img.getAttribute('src') || ''), maxH = 30 * mm, Wc = img.parentElement.clientWidth || 1000;
     if (d && d[0] && d[1]) { const sc = Math.min(1, Wc / d[0], maxH / d[1]); img.style.width = d[0] * sc + 'px'; img.style.height = d[1] * sc + 'px'; } else img.style.height = maxH + 'px'; });
   const h0 = tinggi(); if (!h0 || h0 <= batas) return selesai([html]);
-  const tabs = [...sec.querySelectorAll('table.main')].filter(t => t.tBodies[0] && t.tBodies[0].rows.length > 1); if (!tabs.length) return selesai([html]);
+  /* Bila tabel tidak bisa dipotong (mis. jadwal dengan sel yang menyambung semua baris), isi halaman diperkecil sedikit agar tetap satu lembar bersama tanda tangan. */
+  const kecilkan = () => { let z = Math.max(0.6, batas / tinggi() * 0.99); const anakS = [...sec.children];
+    for (let n = 0; n < 12; n++) { anakS.forEach(el => el.style.zoom = z); if (tinggi() <= batas || z <= 0.6) break; z = Math.max(0.6, z - 0.03); }
+    sec.querySelectorAll('.kop.gb img').forEach(i => i.removeAttribute('style')); return selesai([sec.outerHTML]); };
+  const tabs = [...sec.querySelectorAll('table.main')].filter(t => t.tBodies[0] && t.tBodies[0].rows.length > 1); if (!tabs.length) return kecilkan();
   const tab = tabs.reduce((a, t) => t.tBodies[0].rows.length > a.tBodies[0].rows.length ? t : a);
   let blk = tab; while (blk.parentElement !== sec) blk = blk.parentElement;
   const anak = [...sec.children], ib = anak.indexOf(blk), sebelum = anak.slice(0, ib), kaki = anak.slice(ib + 1), rows = [...tab.tBodies[0].rows];
   const G = []; for (let i = 0; i < rows.length;) { let e = i; for (let j = i; j <= e && j < rows.length; j++) [...rows[j].cells].forEach(c => { e = Math.max(e, j + (c.rowSpan || 1) - 1); }); e = Math.min(e, rows.length - 1); G.push([i, e]); i = e + 1; }
-  if (G.length < 2) return selesai([html]);
+  if (G.length < 2) return kecilkan();
   const atur = (pertama, a, b, k) => { sebelum.forEach(el => el.style.display = pertama ? '' : 'none'); kaki.forEach(el => el.style.display = k ? '' : 'none'); blk.style.display = a < b ? '' : 'none';
     const r0 = a < b ? G[a][0] : -1, r1 = a < b ? G[b - 1][1] : -2; rows.forEach((r, i) => r.style.display = i >= r0 && i <= r1 ? '' : 'none'); };
   const muat = (pertama, a, b, k) => { atur(pertama, a, b, k); return tinggi() <= batas; };
@@ -1627,7 +1640,12 @@ function pecahHtml(html) {
   while (s0 < G.length) { const pertama = !potong.length; let e = s0 + 1; while (e < G.length && muat(pertama, s0, e + 1, false)) e++;
     if (e < G.length) { potong.push([s0, e, false, pertama]); s0 = e; continue; }
     if (muat(pertama, s0, e, true)) { potong.push([s0, e, true, pertama]); break; }
-    if (e - 1 > s0) { potong.push([s0, e - 1, false, pertama]); s0 = e - 1; continue; }
+    /* Tanda tangan tidak muat: pindahkan minimal 2 baris data terakhir ke halaman berikutnya bersama tanda tangan. */
+    const baris = (a, b) => G[b - 1][1] - G[a][0] + 1; let m = e - 1;
+    while (m > s0 && baris(m, e) < 2) m--;
+    while (m < e - 1 && !muat(false, m, e, true)) m++;
+    if (m === s0 && e - s0 >= 2) m = e - 1;
+    if (m > s0) { potong.push([s0, m, false, pertama]); s0 = m; continue; }
     potong.push([s0, e, false, pertama]); potong.push([e, e, true, false]); break; }
   const hasil = potong.map(([a, b, k, pertama]) => { atur(pertama, a, b, k); const c = sec.cloneNode(true);
     c.querySelectorAll('[style]').forEach(el => { if (el.style.display === 'none') el.remove(); });
@@ -1816,7 +1834,7 @@ async function barisPDF(buf) {
   return L;
 }
 function bacaSKKNI(L) {
-  const KODE = /[A-Z]\.\d{2}[A-Z0-9]{3,8}\d{0,2}\.\d{3}\.\d{1,2}/, hal = t => /^-\s*\d+\s*-$/.test(t), kepalaTabel = t => /ELEMEN KOMPETENSI/.test(t) && /KRITERIA/.test(t), units = []; let u = null, mode = null;
+  const KODE = /[A-Z]\.\d{2}[A-Z0-9]{3,8}\d{0,2}\.\d{3}\.\d{1,2}|[A-Z]\.\d{2}(?:\.\d{2,4}){2,4}\.\d{1,2}/, hal = t => /^-\s*\d+\s*-$/.test(t), kepalaTabel = t => /ELEMEN KOMPETENSI/.test(t) && /KRITERIA/.test(t), units = []; let u = null, mode = null;
   for (let i = 0; i < L.length; i++) {
     const t = L[i].t.trim(); if (hal(t)) continue;
     if (t.startsWith('KODE UNIT')) { const m = t.replace(/(\d\.)\s+(\d)/g, '$1$2').match(KODE); units.push(u = { kode: m ? m[0] : '', judul: '', elemen: [], kuk: [], jp: 0, kelompok: 'Inti', pilih: false }); mode = null; continue; }
@@ -1847,7 +1865,7 @@ function bacaSKKNI(L) {
   return units;
 }
 async function bacaKurikulumTabel(buf) {
-  await muatSkrip(XLSXJS); const wb = XLSX.read(buf, { type: 'array' }), KODE = /^[A-Z]\.\d{2}[A-Z0-9]{3,8}\d{0,2}\.\d{3}\.\d{1,2}$/;
+  await muatSkrip(XLSXJS); const wb = XLSX.read(buf, { type: 'array' }), KODE = /^(?:[A-Z]\.\d{2}[A-Z0-9]{3,8}\d{0,2}\.\d{3}\.\d{1,2}|[A-Z]\.\d{2}(?:\.\d{2,4}){2,4}\.\d{1,2})$/;
   const urut = [...wb.SheetNames].sort((a, b) => /kurikulum/i.test(b) - /kurikulum/i.test(a));
   for (const n of urut) {
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: '' }), cols = [...Array(Math.max(0, ...rows.map(r => r.length))).keys()];
@@ -1901,9 +1919,17 @@ function cariGanda(meta, U) { const B = BankSK.list(), sd = sidikSK(U);
   if (sama) return { jenis: 'sama', r: sama };
   const K = new Set(U.map(u => u.kode).filter(Boolean)), mirip = B.map(r => ({ r, n: r.unit.filter(u => K.has(u.kode)).length })).filter(x => x.n && x.n >= Math.min(K.size, x.r.unit.length) * 0.5).sort((a, b) => b.n - a.n)[0];
   return mirip ? { jenis: 'mirip', r: mirip.r, n: mirip.n } : null; }
+function kodeDariBank(p, hitung) { const nm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), M = new Map();
+  BankSK.list().forEach(r => r.unit.forEach(u => { if (u.kode && u.judul && !M.has(nm(u.judul))) M.set(nm(u.judul), u.kode); }));
+  let n = 0; p.kurikulum.inti.forEach(u => { if (!u.kode && M.has(nm(u.judul))) { n++; if (!hitung) u.kode = M.get(nm(u.judul)); } }); return n; }
 function bukaDariBank(r) { S.impor = { nama: namaSK(r), units: clone(r.unit).map(u => ({ ...u, jp: 0, kelompok: 'Inti', pilih: false })), cari: '', bankId: r.id }; }
 async function simpanKeBank(L, U, berkas) { const meta = metaSKKNI(L), g = cariGanda(meta, U);
-  if (g && g.jenis === 'sama') { const j = await pilihan(`SKKNI ini sudah ada di bank: ${namaSK(g.r)}, ${g.r.unit.length} unit${g.r.oleh ? ', diunggah oleh ' + g.r.oleh : ''}. Unggahan ganda dicegah agar bank tetap rapi.`, [['pakai', 'Pakai SKKNI dari bank', 'Hasil baca yang sama, tanpa menyimpan salinan baru.']]); return { tolak: true, pakai: j === 'pakai' ? g.r : null }; }
+  if (g && g.jenis === 'sama') { const kL = g.r.unit.filter(u => !u.kode).length, kB = U.filter(u => !u.kode).length, lebih = kB < kL || U.length > g.r.unit.length, boleh = !CLOUD || isAdmin() || (g.r.olehEmail && S.saya && g.r.olehEmail === S.saya.email);
+    const opsi = [['pakai', 'Pakai SKKNI dari bank', 'Tanpa menyimpan salinan baru.']];
+    if (lebih && boleh) opsi.unshift(['perbarui', 'Perbarui data di bank dengan hasil baca ini', `Hasil baca sekarang lebih lengkap${kL > kB ? `: ${kL - kB} kode unit yang kosong di bank kini terbaca` : ''}. Kelas yang sudah memakai SKKNI ini bisa dilengkapi lewat tombol di halaman Kurikulum.`]);
+    const j = await pilihan(`SKKNI ini sudah ada di bank: ${namaSK(g.r)}, ${g.r.unit.length} unit${g.r.oleh ? ', diunggah oleh ' + g.r.oleh : ''}.${lebih && !boleh ? ' Hasil baca sekarang lebih lengkap. Minta administrator atau pengunggahnya memperbarui data di bank.' : ' Unggahan ganda dicegah agar bank tetap rapi.'}`, opsi);
+    if (j === 'perbarui') { Object.assign(g.r, { unit: U.map(unitBank), sidik: sidikSK(U), diperbarui: new Date().toISOString() }); BankSK.save(g.r); toast('Data SKKNI di bank diperbarui.'); return { tolak: true, pakai: g.r }; }
+    return { tolak: true, pakai: j === 'pakai' ? g.r : null }; }
   if (g && g.jenis === 'mirip') { const j = await pilihan(`${g.n} kode unit pada file ini sama dengan ${namaSK(g.r)} yang sudah ada di bank. Mungkin ini versi revisinya.`, [['baru', 'Simpan sebagai SKKNI baru', 'Untuk SKKNI revisi atau bidang lain.'], ['pakai', 'Pakai yang ada di bank', 'Tidak menyimpan file ini.']]); if (!j) return { tolak: true }; if (j === 'pakai') return { tolak: true, pakai: g.r }; }
   const r = { id: 'SK' + idBaru(), ...meta, nama: '', berkas, unit: U.map(unitBank), sidik: sidikSK(U), status: 'berlaku', oleh: S.saya ? S.saya.nama : '', dibuat: new Date().toISOString() };
   BankSK.save(r); return { r }; }
@@ -2065,6 +2091,8 @@ document.addEventListener('click', async e => {
     S.insEdit = null; if (baru) { IStore.setAktif(r.id); S.view = 'daftar'; toast('Profil ' + nm + ' dibuat.'); } render(); }
   else if (a === 'insMasuk') { IStore.setAktif(id); S.cur = null; S.view = 'daftar'; render(); }
   else if (a === 'awKeluar') Awan.keluar();
+  else if (a === 'awKeluarSemua') Awan.keluarSemua();
+  else if (a === 'kodeBank') { const n = kodeDariBank(S.cur); simpanNanti(); render(); toast(`${n} kode unit diisi dari bank SKKNI.`); }
   else if (a === 'awProfil') Awan.simpanProfil();
   else if (a === 'awPeriksa') Awan.periksa();
   else if (a === 'awAkun') { S.view = 'akun'; S.awEdit = null; S.cur = null; render(); }
