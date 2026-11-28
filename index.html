@@ -1573,7 +1573,7 @@ function pgBahan(p, w, no) {
   const a = new Date(w.days[0] + 'T00:00'), b = new Date(w.days[w.days.length - 1] + 'T00:00'), bl = blnSingkat(w.days), dd = d => String(d.getDate()).padStart(2, '0'), tg = d => `${dd(d)} ${BULAN[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
   let rows = '';
   for (let i = 0; i < n; i++) { const s = P[i], r = R[i], bh = r && bahanDari(p, r.bid);
-    rows += `<tr><td class="c">${!P.length || i < P.length ? i + 1 : ''}</td>${i ? '' : `<td rowspan="${n}" class="c" style="vertical-align:middle">${tg(a)}<br>s/d<br>${tg(b)}</td>`}<td>${s ? esc(UP(s.nama)) : ''}</td><td class="c">${U[i] ? esc(U[i]) : ''}</td><td>${bh ? esc(bh.nama) : ''}</td><td class="c">${bh ? fmtN(bh.jumlah) + ' ' + esc(bh.satuan) : ''}</td><td class="c">${r ? fmtN(r.teori) : ''}</td><td class="c">${r ? fmtN(r.praktek) : ''}</td><td class="c">${r ? fmtN((+r.teori || 0) + (+r.praktek || 0)) : ''}</td>${i ? '' : `<td rowspan="${n}" class="c" style="vertical-align:middle">Ketua Kelas,<br><br><br><br><b>${ketua ? esc(UP(ketua.nama)) : '..........................'}</b></td>`}</tr>`; }
+    rows += `<tr><td class="c">${!P.length || i < P.length ? i + 1 : ''}</td>${i ? '' : `<td rowspan="${n}" data-belah class="c" style="vertical-align:middle">${tg(a)}<br>s/d<br>${tg(b)}</td>`}<td>${s ? esc(UP(s.nama)) : ''}</td><td class="c">${U[i] ? esc(U[i]) : ''}</td><td>${bh ? esc(bh.nama) : ''}</td><td class="c">${bh ? fmtN(bh.jumlah) + ' ' + esc(bh.satuan) : ''}</td><td class="c">${r ? fmtN(r.teori) : ''}</td><td class="c">${r ? fmtN(r.praktek) : ''}</td><td class="c">${r ? fmtN((+r.teori || 0) + (+r.praktek || 0)) : ''}</td>${i ? '' : `<td rowspan="${n}" data-belah class="c" style="vertical-align:middle">Ketua Kelas,<br><br><br><br><b>${ketua ? esc(UP(ketua.nama)) : '..........................'}</b></td>`}</tr>`; }
   return `<section class="pg pt bahan">${kop(p)}<div class="jd">DAFTAR PENGGUNAAN BAHAN PELATIHAN</div>
     <div class="duaInfo"><table class="info"><tr><td style="width:34mm">Program Kegiatan</td><td>: ${esc(prog(p))}</td></tr><tr><td>Kejuruan</td><td>: ${esc(p.program.kejuruan)}</td></tr><tr><td>Program Pelatihan</td><td>: ${esc(p.program.nama)}</td></tr></table>
     <table class="info"><tr><td style="width:30mm">Minggu Ke</td><td>: ${no}</td></tr><tr><td>Tanggal</td><td>: ${dd(a)}-${dd(b)}</td></tr><tr><td>Bulan</td><td>: ${bl.pendek}</td></tr><tr><td>Tahun Anggaran</td><td>: ${esc(p.program.tahun || a.getFullYear())}</td></tr></table></div>
@@ -1619,23 +1619,36 @@ function pecahHtml(html) {
   let W = document.getElementById('ukurPg'); if (!W) { W = document.createElement('div'); W.id = 'ukurPg'; W.setAttribute('aria-hidden', 'true'); document.body.appendChild(W); }
   W.innerHTML = html; const sec = W.querySelector('section.pg'), selesai = r => { W.innerHTML = ''; return r; };
   if (!sec || sec.classList.contains('surat')) return selesai([html]);
-  const mm = 96 / 25.4, batas = (sec.classList.contains('pt') ? 274 : 191) * mm, tinggi = () => sec.getBoundingClientRect().height;
-  sec.querySelectorAll('.kop.gb img').forEach(img => { const d = dimGambar(img.getAttribute('src') || ''), maxH = 30 * mm, Wc = img.parentElement.clientWidth || 1000;
+  const mm = 96 / 25.4, batas = (sec.classList.contains('pt') ? 274 : 191) * mm, tinggiDari = el => el.getBoundingClientRect().height;
+  const aturKop = c => c.querySelectorAll('.kop.gb img').forEach(img => { const d = dimGambar(img.getAttribute('src') || ''), maxH = 30 * mm, Wc = img.parentElement.clientWidth || 1000;
     if (d && d[0] && d[1]) { const sc = Math.min(1, Wc / d[0], maxH / d[1]); img.style.width = d[0] * sc + 'px'; img.style.height = d[1] * sc + 'px'; } else img.style.height = maxH + 'px'; });
-  const h0 = tinggi(); if (!h0 || h0 <= batas) return selesai([html]);
-  /* Bila tabel tidak bisa dipotong (mis. jadwal dengan sel yang menyambung semua baris), isi halaman diperkecil sedikit agar tetap satu lembar bersama tanda tangan. */
-  const kecilkan = () => { let z = Math.max(0.6, batas / tinggi() * 0.99); const anakS = [...sec.children];
-    for (let n = 0; n < 12; n++) { anakS.forEach(el => el.style.zoom = z); if (tinggi() <= batas || z <= 0.6) break; z = Math.max(0.6, z - 0.03); }
-    sec.querySelectorAll('.kop.gb img').forEach(i => i.removeAttribute('style')); return selesai([sec.outerHTML]); };
+  const bersihKop = c => c.querySelectorAll('.kop.gb img').forEach(i => i.removeAttribute('style'));
+  aturKop(sec);
+  const h0 = tinggiDari(sec); if (!h0 || h0 <= batas) return selesai([html]);
+  /* Bila tabel tidak bisa dipotong, isi halaman diperkecil sedikit agar tetap satu lembar bersama tanda tangan. */
+  const kecilkan = () => { W.innerHTML = ''; W.appendChild(sec); let z = Math.max(0.6, batas / tinggiDari(sec) * 0.99); const anakS = [...sec.children];
+    for (let n = 0; n < 12; n++) { anakS.forEach(el => el.style.zoom = z); if (tinggiDari(sec) <= batas || z <= 0.6) break; z = Math.max(0.6, z - 0.03); }
+    bersihKop(sec); sec.querySelectorAll('[data-belah],[data-potong]').forEach(x => { x.removeAttribute('data-belah'); x.removeAttribute('data-potong'); }); return selesai([sec.outerHTML]); };
   const tabs = [...sec.querySelectorAll('table.main')].filter(t => t.tBodies[0] && t.tBodies[0].rows.length > 1); if (!tabs.length) return kecilkan();
   const tab = tabs.reduce((a, t) => t.tBodies[0].rows.length > a.tBodies[0].rows.length ? t : a);
   let blk = tab; while (blk.parentElement !== sec) blk = blk.parentElement;
-  const anak = [...sec.children], ib = anak.indexOf(blk), sebelum = anak.slice(0, ib), kaki = anak.slice(ib + 1), rows = [...tab.tBodies[0].rows];
-  const G = []; for (let i = 0; i < rows.length;) { let e = i; for (let j = i; j <= e && j < rows.length; j++) [...rows[j].cells].forEach(c => { e = Math.max(e, j + (c.rowSpan || 1) - 1); }); e = Math.min(e, rows.length - 1); G.push([i, e]); i = e + 1; }
-  if (G.length < 2) return kecilkan();
-  const atur = (pertama, a, b, k) => { sebelum.forEach(el => el.style.display = pertama ? '' : 'none'); kaki.forEach(el => el.style.display = k ? '' : 'none'); blk.style.display = a < b ? '' : 'none';
-    const r0 = a < b ? G[a][0] : -1, r1 = a < b ? G[b - 1][1] : -2; rows.forEach((r, i) => r.style.display = i >= r0 && i <= r1 ? '' : 'none'); };
-  const muat = (pertama, a, b, k) => { atur(pertama, a, b, k); return tinggi() <= batas; };
+  const ib = [...sec.children].indexOf(blk), nAnak = sec.children.length, rows = [...tab.tBodies[0].rows];
+  tab.setAttribute('data-potong', '1');
+  /* Sel bertanda data-belah (mis. tanggal dan tanda tangan ketua kelas yang menyambung semua baris) boleh dipotong: diulang di halaman berikutnya. */
+  const belah = []; rows.forEach((r, ri) => [...r.cells].forEach((c, ci) => { if (c.hasAttribute('data-belah')) { c.setAttribute('data-belah', belah.length); belah.push({ ro: ri, col: ci, end: ri + (c.rowSpan || 1) - 1 }); } }));
+  const G = []; for (let i = 0; i < rows.length;) { let e = i; for (let j = i; j <= e && j < rows.length; j++) [...rows[j].cells].forEach(c => { if (!c.hasAttribute('data-belah')) e = Math.max(e, j + (c.rowSpan || 1) - 1); }); e = Math.min(e, rows.length - 1); G.push([i, e]); i = e + 1; }
+  if (G.length < 2) { tab.removeAttribute('data-potong'); return kecilkan(); }
+  const bangun = (pertama, a, b, k) => {
+    const c = sec.cloneNode(true), anak = [...c.children], t = c.querySelector('[data-potong]'), R = [...t.tBodies[0].rows];
+    const r0 = a < b ? G[a][0] : 0, r1 = a < b ? G[b - 1][1] : -1;
+    if (a < b) { belah.forEach((x, bi) => { const sel = t.querySelector(`[data-belah="${bi}"]`); if (!sel) return;
+        if (x.ro < r0 && x.end >= r0) { const baru = sel.cloneNode(true); baru.rowSpan = Math.min(x.end, r1) - r0 + 1; const row = R[r0], ref = row.cells[x.col] || null; row.insertBefore(baru, ref); }
+        else if (x.ro >= r0 && x.ro <= r1) sel.rowSpan = Math.min(x.end, r1) - x.ro + 1; });
+      R.forEach((r, i) => { if (i < r0 || i > r1) r.remove(); }); }
+    anak.forEach((el, i) => { if ((i < ib && !pertama) || (i > ib && !k) || (i === ib && a >= b)) el.remove(); });
+    if (!pertama) c.classList.add('lanjut'); return c; };
+  const ukur = c => { W.innerHTML = ''; aturKop(c); W.appendChild(c); return tinggiDari(c); };
+  const muat = (pertama, a, b, k) => ukur(bangun(pertama, a, b, k)) <= batas;
   const potong = []; let s0 = 0;
   while (s0 < G.length) { const pertama = !potong.length; let e = s0 + 1; while (e < G.length && muat(pertama, s0, e + 1, false)) e++;
     if (e < G.length) { potong.push([s0, e, false, pertama]); s0 = e; continue; }
@@ -1647,10 +1660,7 @@ function pecahHtml(html) {
     if (m === s0 && e - s0 >= 2) m = e - 1;
     if (m > s0) { potong.push([s0, m, false, pertama]); s0 = m; continue; }
     potong.push([s0, e, false, pertama]); potong.push([e, e, true, false]); break; }
-  const hasil = potong.map(([a, b, k, pertama]) => { atur(pertama, a, b, k); const c = sec.cloneNode(true);
-    c.querySelectorAll('[style]').forEach(el => { if (el.style.display === 'none') el.remove(); });
-    c.querySelectorAll('.kop.gb img').forEach(i => i.removeAttribute('style'));
-    if (!pertama) c.classList.add('lanjut'); return c.outerHTML.replace(/ style=""/g, ''); });
+  const hasil = potong.map(([a, b, k, pertama]) => { const c = bangun(pertama, a, b, k); c.querySelectorAll('[data-potong]').forEach(x => x.removeAttribute('data-potong')); c.querySelectorAll('[data-belah]').forEach(x => x.removeAttribute('data-belah')); bersihKop(c); return c.outerHTML.replace(/ style=""/g, ''); });
   return selesai(hasil);
 }
 LAPORAN.forEach(l => { const asli = l.pages; l.pages = p => { const P = asli(p).flatMap(pecahHalaman), kh = warnaKepala(p); return P.map((x, i) => ({ ...x, html: x.html.replace('<section class="pg', `<section style="--kh:${kh}" class="pg`).replace(/<\/section>\s*$/, `<div class="halno">Laporin - ${i + 1} / ${P.length}</div></section>`) })); }; });
