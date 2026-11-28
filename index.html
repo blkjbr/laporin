@@ -106,9 +106,9 @@ main{min-width:0}.card{min-width:0}.menuToggle{display:none}@media (max-width:82
 /* ================= Sambungan database =================
    Isi dua baris di bawah setelah server Apps Script dipasang (lihat PANDUAN-PASANG).
    Bila kosong, LAPORIN berjalan tanpa database: semua data hanya tersimpan di browser ini. */
-const LAPORIN_API = '';        // URL aplikasi web Apps Script, berakhiran /exec
-const LAPORIN_CLIENT_ID = '';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
-const LAPORIN_ADMIN_EMAIL = ''; // email administrator untuk tombol Hubungi admin (boleh lebih dari satu, pisahkan dengan koma)
+const LAPORIN_API = 'https://script.google.com/macros/s/AKfycbyg3WtQKhmbtnKjSn_uWkXqAHYOEyYoUiX2mRW0XG3wWgql3F0rtBeZOvLDSojxEFu60A/exec';        // URL aplikasi web Apps Script, berakhiran /exec
+const LAPORIN_CLIENT_ID = '719371143423-v2bvbg62r4q6qsn9rtgmm4dhdheasb9t.apps.googleusercontent.com';  // OAuth Client ID, berakhiran .apps.googleusercontent.com
+const LAPORIN_ADMIN_EMAIL = 'instruktur.blkjember@gmail.com'; // email administrator untuk tombol Hubungi admin (boleh lebih dari satu, pisahkan dengan koma)
 const CFG = Object.assign({ api: LAPORIN_API, clientId: LAPORIN_CLIENT_ID, adminEmail: LAPORIN_ADMIN_EMAIL }, window.LAPORIN_CONFIG || {});
 const CLOUD = !!(CFG.api && CFG.clientId);
 /* ================= Penyimpanan ================= */
