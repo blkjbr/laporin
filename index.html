@@ -129,7 +129,7 @@ const KEY_MT = 'silapela_metode', MT_DASAR = ['Luring', 'Daring', 'Blended']; le
 try { if (lsOK) mtTambahan = JSON.parse(localStorage.getItem(KEY_MT) || '[]'); } catch (e) { }
 function daftarMT(nilai) { const a = [...MT_DASAR, ...mtTambahan]; if (nilai && !a.includes(nilai)) a.push(nilai); return a; }
 function simpanMT() { if (lsOK) localStorage.setItem(KEY_MT, JSON.stringify(mtTambahan)); }
-const VERSI = '1.6', VERSI_TGL = '27 November 2026';
+const VERSI = '1.7', VERSI_TGL = '28 November 2026';
 const Store = {
   async list() { return lsOK ? JSON.parse(localStorage.getItem(KEY) || '[]') : memori; },
   async save(p) { if (CLOUD) Awan.tandai('kelas', p.id); const a = await this.list(); const i = a.findIndex(x => x.id === p.id); i < 0 ? a.push(p) : a[i] = p; this._w(a); },
